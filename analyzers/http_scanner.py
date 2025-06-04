@@ -35,7 +35,7 @@ def extract_http_payload(raw_data):
     except Exception:
         return None
 
-def analyze_http_tunnels(packets):
+def analyze_http_packets(packets):
     global ENTROPY_TH, BODY_ENTROPY_TH
 
     sus_requests = []
