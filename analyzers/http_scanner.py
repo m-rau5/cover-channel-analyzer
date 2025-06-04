@@ -111,8 +111,24 @@ def analyze_http_tunnels(packets):
                             "body_entropy": body_entropy
                         })
 
-                # mark packet as suspicious
-                if len(full_url) > 100 or param_entropy > 4.0 or body_entropy > 4.2:
+                # mark packet as sus + reasons why = basically an if sausage
+                sus_markers = []
+                if len(full_url) > 100:
+                    sus_markers.append("Long URL")
+                if param_entropy > 4.0:
+                    sus_markers.append("High GET param entropy")
+                if body_entropy > 4.2:
+                    sus_markers.append("High body entropy")
+                if content_length and body_entropy > BODY_ENTROPY_TH and content_length > 150:
+                    sus_markers.append("Suspicious Content-Length")
+                if any(maybe_enc["location"] == "GET param" and maybe_enc["url"] == full_url 
+                        for maybe_enc in base_encodings):
+                    sus_markers.append("BaseX-encoded data found in the URL")
+                if any(maybe_enc["location"] == "body" and maybe_enc["url"] == full_url 
+                        for maybe_enc in base_encodings):
+                    sus_markers.append("BaseX-encoded data found in body")
+
+                if sus_markers:
                     sus_requests.append({
                         "url": full_url,
                         "method": method,
@@ -120,7 +136,8 @@ def analyze_http_tunnels(packets):
                         "url_length": len(full_url),
                         "param_entropy": param_entropy,
                         "body_entropy": body_entropy,
-                        "content_length": content_length if isinstance(content_length, int) else None
+                        "content_length": content_length if isinstance(content_length, int) else None,
+                        "reasons": sus_markers
                     })
 
 

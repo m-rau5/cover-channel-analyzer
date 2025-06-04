@@ -7,6 +7,7 @@ file_path = input('Please enter the path of the pcap/pcapng file: ')
 if file_path:
     try:
         packets = rdpcap(file_path)
+        # results = analyze_dns_packets(packets)
         results = analyze_http_tunnels(packets)
         # print(results)
         for entry in results:
