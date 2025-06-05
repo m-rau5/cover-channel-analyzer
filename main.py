@@ -4,6 +4,7 @@ from scapy.all import rdpcap
 from analyzers.dns_scanner import analyze_dns_packets
 from analyzers.http_scanner import analyze_http_packets
 from analyzers.icmp_scanner import analyze_icmp_packets
+import datetime
 import os
 
 class PacketAnalyzerApp:
@@ -34,6 +35,10 @@ class PacketAnalyzerApp:
 
         self.scan_button = tk.Button(root, text="Scan", command=self.run_analysis)
         self.scan_button.pack(pady=5)
+
+        # report bttn (disabled until pcap scanned)
+        self.export_button = tk.Button(root, text="Export Report", command=self.export_report, state="disabled")
+        self.export_button.pack(pady=5)
 
         # analysis result text box thing
         self.output_text = scrolledtext.ScrolledText(root, width=100, height=30)
@@ -71,8 +76,34 @@ class PacketAnalyzerApp:
                 icmp_results = analyze_icmp_packets(packets)
                 self.result_print(icmp_results)
 
+            self.export_button.config(state="normal")
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to analyze file:\n{e}")
+
+    def export_report(self):
+        # get time and date since format needs them
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        filename = f"Covert-channel-report-{timestamp}.txt"
+        report_dir = "reports"
+        os.makedirs(report_dir, exist_ok=True)
+
+        full_path = os.path.join(report_dir, filename)
+
+        try:
+            with open(full_path, "w", encoding="utf-8") as f:
+                # name of pcap followed by analysis of the pcap
+                pcap_name = os.path.basename(self.file_path) if self.file_path else "Unknown"
+                f.write(f"Covert Channel Analysis Report\n")
+                f.write(f"Analyzed file: {pcap_name}\n")
+                f.write(f"Timestamp: {timestamp}\n")
+                f.write("=" * 60 + "\n\n")
+
+                content = self.output_text.get("1.0", tk.END)
+                f.write(content.strip() + "\n")
+            messagebox.showinfo("Export Successful", f"Report saved to:\n{full_path}")
+        except Exception as e:
+            messagebox.showerror("Export Failed", str(e))
 
     # printing function for tkinter text box (with the scan results)
     def result_print(self, results):
